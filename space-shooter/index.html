@@ -1,1 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>🚀 Space Shooter</title>
+<style>
+  body { margin:0; background:black; overflow:hidden; }
+  canvas { display:block; margin:auto; background:#000; }
+</style>
+</head>
+<body>
+
+<canvas id="game" width="480" height="640"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width, H = canvas.height;
+
+// Load ảnh
+const playerImg = new Image(); playerImg.src = "assets/player.png";
+const enemyImg  = new Image(); enemyImg.src  = "assets/enemy.png";
+const bulletImg = new Image(); bulletImg.src = "assets/bullet.png";
+
+// Player
+let player = { x:W/2-25, y:H-80, w:50, h:60, speed:5 };
+
+// Game objects
+let bullets = [];
+let enemies = [];
+let score = 0;
+let gameOver = false;
+
+const keys = {};
+
+// Input
+document.addEventListener("keydown", e => keys[e.code]=true);
+document.addEventListener("keyup", e => keys[e.code]=false);
+
+// Spawn enemy
+function spawnEnemy(){
+  enemies.push({
+    x: Math.random()*(W-50),
+    y: -60,
+    w: 50,
+    h: 60,
+    speed: 2 + Math.random()*2
+  });
+}
+setInterval(spawnEnemy, 800);
+
+// Shoot
+function shoot(){
+  bullets.push({
+    x: player.x + player.w/2 - 5,
+    y: player.y,
+    w: 10,
+    h: 20,
+    speed: 7
+  });
+}
+
+// Collision
+function hit(a,b){
+  return a.x<b.x+b.w && a.x+a.w>b.x &&
+         a.y<b.y+b.h && a.y+a.h>b.y;
+}
+
+// Game loop
+function loop(){
+  ctx.clearRect(0,0,W,H);
+
+  if(!gameOver){
+    // Move player
+    if(keys.ArrowLeft && player.x>0) player.x -= player.speed;
+    if(keys.ArrowRight && player.x<W-player.w) player.x += player.speed;
+    if(keys.ArrowUp && player.y>0) player.y -= player.speed;
+    if(keys.ArrowDown && player.y<H-player.h) player.y += player.speed;
+    if(keys.Space && bullets.length<5) shoot();
+
+    // Update bullets
+    bullets.forEach(b => b.y -= b.speed);
+    bullets = bullets.filter(b => b.y>-20);
+
+    // Update enemies
+    enemies.forEach(e => e.y += e.speed);
+    enemies = enemies.filter(e => e.y<H+60);
+
+    // Check collisions
+    enemies.forEach((e,ei)=>{
+      bullets.forEach((b,bi)=>{
+        if(hit(e,b)){
+          enemies.splice(ei,1);
+          bullets.splice(bi,1);
+          score++;
+        }
+      });
+      if(hit(e,player)){
+        gameOver = true;
+      }
+    });
+  }
+
+  // Draw
+  ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+  bullets.forEach(b=>ctx.drawImage(bulletImg,b.x,b.y,b.w,b.h));
+  enemies.forEach(e=>ctx.drawImage(enemyImg,e.x,e.y,e.w,e.h));
+
+  ctx.fillStyle="white";
+  ctx.fillText("Score: "+score,10,20);
+
+  if(gameOver){
+    ctx.fillStyle="red";
+    ctx.font="30px Arial";
+    ctx.fillText("GAME OVER",120,300);
+    ctx.font="16px Arial";
+    ctx.fillText("Press R to restart",150,340);
+    if(keys.KeyR) location.reload();
+  }
+
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+
+</body>
+</html>
 
